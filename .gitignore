@@ -14,9 +14,10 @@ database.sqlite
 .env
 .env.*
 
-package-lock.json
+# Only ignore alternative lock files (keep package-lock.json)
 yarn.lock
 pnpm-lock.yaml
+Dockerfile.backup
 
 /extensions/*/dist
 
