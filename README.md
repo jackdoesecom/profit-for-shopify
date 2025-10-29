@@ -1,13 +1,51 @@
-# Shopify App Template - Remix
+# Profit for Shopify
 
-> [!NOTE]
-> **Remix is now React Router.** As of [React Router v7](https://remix.run/blog/merging-remix-and-react-router), Remix and React Router have merged.
-> 
-> For new projects, use the **[Shopify App Template - React Router](https://github.com/Shopify/shopify-app-template-react-router)** instead.
-> 
-> To migrate your existing Remix app, follow the **[migration guide](https://github.com/Shopify/shopify-app-template-react-router/wiki/Upgrading-from-Remix)**.
+A comprehensive profit analytics app for Shopify merchants to track revenue, costs, and profitability metrics.
 
-This is a template for building a [Shopify app](https://shopify.dev/docs/apps/getting-started) using the [Remix](https://remix.run) framework.
+## Features
+
+- 📊 **Real-time Profit Analytics** - Track Gross Profit, Contribution Profit, and Net Profit
+- 💰 **Cost Management** - Manage marketing, fixed, and variable costs
+- 🎯 **Target Tracking** - Set monthly targets and monitor progress
+- 📈 **Trend Analysis** - Compare metrics across time periods
+- 🔗 **Facebook Ads Integration** - Automatically sync ad spend from Facebook
+- 🤖 **AI-Powered Optimization** - Get personalized recommendations
+- 📧 **Email Reports** - Send optimization insights to your team
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```bash
+# Shopify (Required)
+SHOPIFY_API_KEY=your_shopify_api_key
+SHOPIFY_API_SECRET=your_shopify_api_secret
+
+# Facebook Ads Integration (Optional)
+FACEBOOK_APP_ID=your_facebook_app_id
+FACEBOOK_APP_SECRET=your_facebook_app_secret
+FACEBOOK_REDIRECT_URI=https://your-app-url/app/facebook-auth
+
+# Email Service (Optional - for sending optimization emails)
+RESEND_API_KEY=your_resend_api_key
+# OR
+SENDGRID_API_KEY=your_sendgrid_api_key
+
+# AI/LLM API (Optional - for advanced recommendations)
+OPENAI_API_KEY=your_openai_api_key
+# OR
+ANTHROPIC_API_KEY=your_anthropic_api_key
+```
+
+### Facebook Ads Setup
+
+1. Create a Facebook App at https://developers.facebook.com/
+2. Add "Facebook Login" product
+3. Set OAuth redirect URI to `https://your-app-url/app/facebook-auth`
+4. Request `ads_read` and `business_management` permissions
+5. Add your App ID and Secret to `.env`
+
+## Quick Start
 
 Rather than cloning this repo, you can use your preferred package manager and the Shopify CLI with [these steps](https://shopify.dev/docs/apps/getting-started/create).
 
