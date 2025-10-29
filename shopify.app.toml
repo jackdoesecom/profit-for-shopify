@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "c0ad178ac486dca3a54958506c327784"
+client_id = "7781acdbe7ee7bec56ac1e3b914d20dd"
 name = "Profit Analytics"
 application_url = "https://profit-for-shopify-production.up.railway.app"
 embedded = true
