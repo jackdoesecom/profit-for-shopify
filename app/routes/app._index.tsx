@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -23,6 +23,7 @@ import { authenticate } from "../shopify.server";
 import { fetchOrdersData, fetchProductCosts, getDateRangeForPeriod } from "../utils/shopify-data";
 import { getMarketingCosts, getFixedCosts, getManualCosts, getSettings, prisma } from "../utils/database";
 import { calculateProfits, calculateTrend } from "../utils/profit-calculator";
+import { syncFacebookAdCosts } from "../utils/facebook-ads";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
@@ -38,6 +39,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const previousEndDate = new Date(startDate);
 
   try {
+    // Check if Facebook is connected and sync if needed
+    const facebookIntegration = await prisma.integration.findFirst({
+      where: {
+        shop: session.shop,
+        platform: "facebook_ads",
+        isActive: true,
+      },
+    });
+
+    if (facebookIntegration) {
+      // Check if we need to sync (last sync was more than 1 hour ago or never synced)
+      const lastSync = facebookIntegration.lastSync;
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      
+      if (!lastSync || lastSync < oneHourAgo) {
+        console.log("Auto-syncing Facebook ad spend...");
+        await syncFacebookAdCosts(session.shop, startDate, endDate);
+      }
+    }
+
     // Fetch current period data
     const salesData = await fetchOrdersData(admin, startDate, endDate);
     const { totalCogs, totalShipping } = await fetchProductCosts(admin, startDate, endDate);
@@ -172,6 +193,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       targets,
       trends,
       period,
+      facebookLastSync: facebookIntegration?.lastSync,
+      facebookConnected: !!facebookIntegration,
     });
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -633,8 +656,9 @@ function SetupCard({ title, description, buttonText, onAction }: SetupCardProps)
 
 export default function Dashboard() {
   const data = useLoaderData<typeof loader>();
-  const { metrics, targets, trends, period, margins, distributions } = data as any;
+  const { metrics, targets, trends, period, margins, distributions, facebookConnected, facebookLastSync } = data as any;
   const navigate = useNavigate();
+  const submit = useSubmit();
   const [selectedPeriod, setSelectedPeriod] = useState(period || "last30days");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showOptimizeModal, setShowOptimizeModal] = useState(false);
@@ -856,6 +880,39 @@ export default function Dashboard() {
             />
           </Popover>
         </div>
+
+        {/* Facebook Sync Status */}
+        {facebookConnected && (
+          <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+            <InlineStack align="space-between" blockAlign="center">
+              <InlineStack gap="200" blockAlign="center">
+                <Badge tone="success">Facebook Ads Connected</Badge>
+                {facebookLastSync && (
+                  <Text as="p" variant="bodySm" tone="subdued">
+                    Ad spend last synced: {new Date(facebookLastSync).toLocaleString()}
+                  </Text>
+                )}
+              </InlineStack>
+              <Button
+                size="slim"
+                onClick={() => {
+                  const formData = new FormData();
+                  formData.append("period", selectedPeriod);
+                  submit(formData, {
+                    method: "post",
+                    action: "/app/sync-facebook"
+                  });
+                  // Refresh page after sync
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 2000);
+                }}
+              >
+                Sync Facebook Ads Now
+              </Button>
+            </InlineStack>
+          </div>
+        )}
 
         {/* Setup Cards */}
         <Layout>
