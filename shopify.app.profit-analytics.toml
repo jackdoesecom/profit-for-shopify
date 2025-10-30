@@ -2,12 +2,11 @@
 
 client_id = "7781acdbe7ee7bec56ac1e3b914d20dd"
 name = "Profit Analytics"
-application_url = "https://example.com"
+application_url = "https://profit-for-shopify-production.up.railway.app"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-include_config_on_deploy = true
 
 [webhooks]
 api_version = "2026-01"
@@ -17,4 +16,8 @@ api_version = "2026-01"
 scopes = "write_products"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ 
+  "https://profit-for-shopify-production.up.railway.app/auth/callback",
+  "https://profit-for-shopify-production.up.railway.app/auth/shopify/callback",
+  "https://profit-for-shopify-production.up.railway.app/api/auth"
+]
