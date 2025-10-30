@@ -118,6 +118,13 @@ export default function SettingsPage() {
   const shopDomain = typeof window !== 'undefined' 
     ? new URLSearchParams(window.location.search).get('shop') || 'adspendcalculator.myshopify.com'
     : 'adspendcalculator.myshopify.com';
+  
+  // Parse Facebook credentials to get ad accounts
+  const facebookCredentials = facebookIntegration?.credentials 
+    ? JSON.parse(facebookIntegration.credentials) 
+    : null;
+  const adAccounts = facebookCredentials?.adAccounts || [];
+  const selectedAdAccountId = facebookCredentials?.selectedAdAccountId;
 
   const [transactionFeePercent, setTransactionFeePercent] = useState(
     settings.transactionFeePercent.toString()
@@ -237,6 +244,47 @@ export default function SettingsPage() {
                   <Text as="p" variant="bodySm" tone="subdued">
                     Last synced: {new Date(facebookIntegration.lastSync).toLocaleString()}
                   </Text>
+                )}
+                
+                {adAccounts.length > 0 && (
+                  <BlockStack gap="200">
+                    <Text as="p" variant="bodyMd">
+                      Ad Account:
+                    </Text>
+                    <select
+                      value={selectedAdAccountId || ''}
+                      onChange={(e) => {
+                        // Update the selected ad account
+                        const updatedCredentials = {
+                          ...facebookCredentials,
+                          selectedAdAccountId: e.target.value
+                        };
+                        
+                        // Submit to update the integration
+                        fetch('/app/update-facebook-account', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            shop: shopDomain,
+                            credentials: JSON.stringify(updatedCredentials)
+                          })
+                        }).then(() => window.location.reload());
+                      }}
+                      style={{
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #ddd',
+                        width: '100%',
+                        maxWidth: '300px'
+                      }}
+                    >
+                      {adAccounts.map((account: any) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name} ({account.currency})
+                        </option>
+                      ))}
+                    </select>
+                  </BlockStack>
                 )}
               </BlockStack>
             </BlockStack>

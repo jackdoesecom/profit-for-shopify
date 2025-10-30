@@ -22,7 +22,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (code && state) {
     // Exchange code for access token
     try {
-      const redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${url.origin}/facebook-oauth`;
+      // Use Railway URL for production
+      const redirectUri = process.env.FACEBOOK_REDIRECT_URI || "https://profit-for-shopify-production.up.railway.app/facebook-oauth";
+      
+      console.log("Exchanging code for token...");
+      console.log("Redirect URI:", redirectUri);
+      console.log("App ID:", process.env.FACEBOOK_APP_ID);
       
       const tokenResponse = await fetch(
         `https://graph.facebook.com/v18.0/oauth/access_token?` +
@@ -40,7 +45,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       console.log("Facebook token response:", tokenData);
 
       if (tokenData.access_token) {
-        // Store the credentials
+        // Get ad accounts to let user select
+        const adAccountsResponse = await fetch(
+          `https://graph.facebook.com/v18.0/me/adaccounts?fields=id,name,currency,account_status&access_token=${tokenData.access_token}`
+        );
+        const adAccountsData = await adAccountsResponse.json();
+        console.log("Ad accounts:", adAccountsData);
+        
+        // Store the credentials with ad accounts
         await prisma.integration.upsert({
           where: {
             shop_platform: {
@@ -53,6 +65,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               accessToken: tokenData.access_token,
               tokenType: tokenData.token_type,
               expiresIn: tokenData.expires_in,
+              adAccounts: adAccountsData.data || [],
+              selectedAdAccountId: adAccountsData.data?.[0]?.id || null, // Default to first account
             }),
             isActive: true,
             lastSync: new Date(),
@@ -64,6 +78,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               accessToken: tokenData.access_token,
               tokenType: tokenData.token_type,
               expiresIn: tokenData.expires_in,
+              adAccounts: adAccountsData.data || [],
+              selectedAdAccountId: adAccountsData.data?.[0]?.id || null,
             }),
             isActive: true,
             lastSync: new Date(),
@@ -95,7 +111,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return redirect("/auth/login?error=missing_shop");
   }
 
-  const redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${url.origin}/facebook-oauth`;
+  // Use Railway URL for production
+  const redirectUri = process.env.FACEBOOK_REDIRECT_URI || "https://profit-for-shopify-production.up.railway.app/facebook-oauth";
   
   const fbAuthUrl = 
     `https://www.facebook.com/v18.0/dialog/oauth?` +

@@ -89,25 +89,29 @@ export async function syncFacebookAdCosts(
 
     const credentials = JSON.parse(integration.credentials);
     const accessToken = credentials.accessToken;
+    const selectedAdAccountId = credentials.selectedAdAccountId;
 
-    // Get ad accounts
-    const adAccounts = await getFacebookAdAccounts(accessToken);
-    
-    if (adAccounts.length === 0) {
-      return { success: false, amount: 0, error: "No Facebook ad accounts found" };
+    // If no ad account selected, try to get accounts
+    if (!selectedAdAccountId) {
+      const adAccounts = await getFacebookAdAccounts(accessToken);
+      if (adAccounts.length === 0) {
+        return { success: false, amount: 0, error: "No Facebook ad accounts found" };
+      }
+      // Use first account by default
+      credentials.selectedAdAccountId = adAccounts[0].id;
     }
 
     let totalSpend = 0;
 
-    // Fetch spend for all ad accounts
-    for (const account of adAccounts) {
+    // Fetch spend only for selected ad account
+    if (credentials.selectedAdAccountId) {
       const spend = await fetchFacebookAdSpend(
         accessToken,
-        account.id,
+        credentials.selectedAdAccountId,
         startDate.toISOString(),
         endDate.toISOString()
       );
-      totalSpend += spend;
+      totalSpend = spend;
     }
 
     // Store the cost in the database
