@@ -121,7 +121,7 @@ export async function syncFacebookAdCosts(
           shop,
           platform: "facebook",
           amount: totalSpend,
-          date: new Date(),
+          date: endDate, // Use the end date of the range being synced
           description: `Facebook Ads spend (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()})`,
         },
       });

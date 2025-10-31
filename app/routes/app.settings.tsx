@@ -103,6 +103,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         ...targetData,
       },
     });
+  } else if (action === "updateFacebookAccount") {
+    // Handle Facebook account updates
+    const credentials = formData.get("credentials") as string;
+    
+    try {
+      await prisma.integration.update({
+        where: {
+          shop_platform: {
+            shop: session.shop,
+            platform: "facebook_ads",
+          },
+        },
+        data: {
+          credentials: credentials,
+        },
+      });
+      return json({ success: true });
+    } catch (error) {
+      console.error("Error updating Facebook account:", error);
+      return json({ success: false }, { status: 500 });
+    }
   }
 
   return json({ success: true });
@@ -275,15 +296,14 @@ export default function SettingsPage() {
                           selectedAdAccountId: e.target.value
                         };
                         
-                        // Submit to update the integration
-                        fetch('/app/update-facebook-account', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            shop: shopDomain,
+                        // Submit to update the integration with proper authentication
+                        submit(
+                          {
+                            action: 'updateFacebookAccount',
                             credentials: JSON.stringify(updatedCredentials)
-                          })
-                        }).then(() => window.location.reload());
+                          },
+                          { method: 'post' }
+                        );
                       }}
                       style={{
                         padding: '8px',
