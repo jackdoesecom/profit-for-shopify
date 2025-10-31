@@ -1,15 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This is your Prisma schema file for PostgreSQL (use this for Railway with PostgreSQL)
+// Rename this to schema.prisma when using PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -71,7 +68,7 @@ model Integration {
   shop        String
   platform    String   // "quickbooks", "facebook_ads", "google_ads", "tiktok_ads"
   isActive    Boolean  @default(false)
-  credentials String?  // encrypted credentials
+  credentials String?  @db.Text // Use Text for PostgreSQL to store long JSON strings
   lastSync    DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
