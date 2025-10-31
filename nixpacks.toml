@@ -2,7 +2,7 @@
 nixPkgs = ["nodejs_20", "python3"]
 
 [phases.build]
-cmds = ["npm ci", "npm run setup", "npm run build"]
+cmds = ["npm ci", "npm run build:prisma", "npm run build"]
 
 [start]
 cmd = "npm run start"
