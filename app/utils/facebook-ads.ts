@@ -68,6 +68,123 @@ export async function fetchFacebookAdSpend(
   }
 }
 
+export async function syncFacebookHistoricalData(
+  shop: string,
+  days: number = 90
+): Promise<{ success: boolean; totalAmount: number; error?: string }> {
+  try {
+    // Get Facebook integration
+    const integration = await prisma.integration.findFirst({
+      where: {
+        shop,
+        platform: "facebook_ads",
+        isActive: true,
+      },
+    });
+
+    if (!integration || !integration.credentials) {
+      return { success: false, totalAmount: 0, error: "Facebook Ads not connected" };
+    }
+
+    const credentials = JSON.parse(integration.credentials);
+    const accessToken = credentials.accessToken;
+    const selectedAdAccountId = credentials.selectedAdAccountId;
+
+    if (!selectedAdAccountId) {
+      return { success: false, totalAmount: 0, error: "No ad account selected" };
+    }
+
+    let totalAmount = 0;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    console.log(`Syncing ${days} days of Facebook ad data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+
+    // Fetch daily insights for the entire range
+    const formattedStartDate = startDate.toISOString().split('T')[0];
+    const formattedEndDate = endDate.toISOString().split('T')[0];
+    
+    const response = await fetch(
+      `https://graph.facebook.com/v18.0/${selectedAdAccountId}/insights?` +
+      `fields=spend,date_start,date_stop&` +
+      `time_range={"since":"${formattedStartDate}","until":"${formattedEndDate}"}` +
+      `&time_increment=1` + // Daily breakdown
+      `&access_token=${accessToken}`
+    );
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error("Facebook Insights API error:", data.error);
+      return { success: false, totalAmount: 0, error: data.error.message };
+    }
+
+    // Store each day's spend in the database
+    const insights = data.data || [];
+    console.log(`Received ${insights.length} daily insights from Facebook`);
+
+    for (const insight of insights) {
+      const spend = parseFloat(insight.spend || '0');
+      const date = new Date(insight.date_start);
+      
+      if (spend > 0) {
+        // Check if we already have data for this date
+        const existing = await prisma.marketingCost.findFirst({
+          where: {
+            shop,
+            platform: "facebook",
+            date: {
+              gte: new Date(date.setHours(0, 0, 0, 0)),
+              lt: new Date(date.setHours(23, 59, 59, 999)),
+            },
+          },
+        });
+
+        if (existing) {
+          // Update existing entry
+          await prisma.marketingCost.update({
+            where: { id: existing.id },
+            data: {
+              amount: spend,
+              description: `Facebook Ads spend for ${insight.date_start}`,
+            },
+          });
+        } else {
+          // Create new entry
+          await prisma.marketingCost.create({
+            data: {
+              shop,
+              platform: "facebook",
+              amount: spend,
+              date: new Date(insight.date_start),
+              description: `Facebook Ads spend for ${insight.date_start}`,
+            },
+          });
+        }
+        
+        totalAmount += spend;
+      }
+    }
+
+    // Update last sync time
+    await prisma.integration.update({
+      where: { id: integration.id },
+      data: { lastSync: new Date() },
+    });
+
+    console.log(`Successfully synced ${insights.length} days, total: $${totalAmount}`);
+    return { success: true, totalAmount };
+  } catch (error) {
+    console.error("Error syncing Facebook historical data:", error);
+    return { 
+      success: false, 
+      totalAmount: 0, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    };
+  }
+}
+
 export async function syncFacebookAdCosts(
   shop: string,
   startDate: Date,

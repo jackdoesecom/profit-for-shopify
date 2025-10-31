@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { prisma } from "../utils/database";
+import { syncFacebookHistoricalData } from "../utils/facebook-ads";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -121,6 +122,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             isActive: true,
             lastSync: new Date(),
           },
+        });
+
+        // Sync historical data (last 90 days) in the background
+        console.log("[FB OAuth] Starting historical data sync for", state);
+        syncFacebookHistoricalData(state, 90).then((result) => {
+          if (result.success) {
+            console.log(`[FB OAuth] Successfully synced $${result.totalAmount} from last 90 days`);
+          } else {
+            console.error(`[FB OAuth] Failed to sync historical data:`, result.error);
+          }
+        }).catch((error) => {
+          console.error(`[FB OAuth] Error syncing historical data:`, error);
         });
 
         // Redirect back to app in Shopify admin

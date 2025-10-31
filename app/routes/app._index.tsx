@@ -23,7 +23,7 @@ import { authenticate } from "../shopify.server";
 import { fetchOrdersData, fetchProductCosts, getDateRangeForPeriod } from "../utils/shopify-data";
 import { getMarketingCosts, getFixedCosts, getManualCosts, getSettings, prisma } from "../utils/database";
 import { calculateProfits, calculateTrend } from "../utils/profit-calculator";
-import { syncFacebookAdCosts } from "../utils/facebook-ads";
+import { syncFacebookHistoricalData } from "../utils/facebook-ads";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
@@ -49,13 +49,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     if (facebookIntegration) {
-      // Check if we need to sync (last sync was more than 1 hour ago or never synced)
+      // Sync recent data (last 3 days) if last sync was more than 1 hour ago
       const lastSync = facebookIntegration.lastSync;
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       
       if (!lastSync || lastSync < oneHourAgo) {
-        console.log("Auto-syncing Facebook ad spend...");
-        await syncFacebookAdCosts(session.shop, startDate, endDate);
+        console.log("Auto-syncing recent Facebook ad spend (last 3 days)...");
+        // Sync just the last 3 days to keep data fresh without heavy API calls
+        syncFacebookHistoricalData(session.shop, 3).catch(error => {
+          console.error("Background sync failed:", error);
+        });
       }
     }
 

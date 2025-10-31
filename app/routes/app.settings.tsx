@@ -238,30 +238,9 @@ export default function SettingsPage() {
                   {facebookIntegration?.isActive ? (
                     <InlineStack gap="200">
                       <Badge tone="success">Connected</Badge>
-                      <Button 
-                        size="slim"
-                        onClick={() => {
-                          const formData = new FormData();
-                          formData.append("period", "last30days");
-                          submit(formData, { 
-                            method: "post",
-                            action: "/app/sync-facebook"
-                          });
-                        }}
-                      >
-                        Sync Now
-                      </Button>
-                      <Button 
-                        size="slim" 
-                        tone="critical"
-                        onClick={() => {
-                          if (confirm("Disconnect Facebook Ads?")) {
-                            // TODO: Add disconnect action
-                          }
-                        }}
-                      >
-                        Disconnect
-                      </Button>
+                      <Text as="p" variant="bodySm" tone="success">
+                        Ad spend syncs automatically
+                      </Text>
                     </InlineStack>
                   ) : (
                     <a 
