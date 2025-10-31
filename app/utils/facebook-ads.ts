@@ -126,17 +126,22 @@ export async function syncFacebookHistoricalData(
 
     for (const insight of insights) {
       const spend = parseFloat(insight.spend || '0');
-      const date = new Date(insight.date_start);
+      const insightDate = new Date(insight.date_start);
       
       if (spend > 0) {
         // Check if we already have data for this date
+        const dayStart = new Date(insightDate);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(insightDate);
+        dayEnd.setHours(23, 59, 59, 999);
+        
         const existing = await prisma.marketingCost.findFirst({
           where: {
             shop,
             platform: "facebook",
             date: {
-              gte: new Date(date.setHours(0, 0, 0, 0)),
-              lt: new Date(date.setHours(23, 59, 59, 999)),
+              gte: dayStart,
+              lt: dayEnd,
             },
           },
         });
