@@ -114,6 +114,11 @@ export default function SettingsPage() {
   const navigation = useNavigation();
   const isLoading = navigation.state === "submitting";
   
+  // Get error from URL if present
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const errorType = urlParams?.get('error');
+  const errorMessage = urlParams?.get('msg');
+  
   // Get shop from URL (Shopify passes it in embedded apps)
   const shopDomain = typeof window !== 'undefined' 
     ? new URLSearchParams(window.location.search).get('shop') || 'adspendcalculator.myshopify.com'
@@ -197,6 +202,16 @@ export default function SettingsPage() {
                     <Text as="p" variant="bodySm" tone="subdued">
                       Automatically sync your Facebook ad spend
                     </Text>
+                    {errorType && (
+                      <Text variant="bodySm" tone="critical" as="p">
+                        {errorType === 'fb_credentials_missing' && 
+                          "⚠️ Facebook credentials not configured. Add FACEBOOK_APP_ID and FACEBOOK_APP_SECRET to Railway."}
+                        {errorType === 'facebook_token_failed' && 
+                          `⚠️ Failed to connect: ${errorMessage ? decodeURIComponent(errorMessage) : 'Check Railway logs for details'}`}
+                        {errorType === 'facebook_api_error' && 
+                          `⚠️ Facebook API Error: ${errorMessage ? decodeURIComponent(errorMessage) : 'Unknown error'}`}
+                      </Text>
+                    )}
                   </BlockStack>
                   
                   {facebookIntegration?.isActive ? (

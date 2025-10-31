@@ -132,10 +132,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         return redirect(`https://admin.shopify.com/store/${shopSlug}/apps/profit-analytics-7/app/settings?error=no_token`);
       }
     } catch (error) {
-      console.error("Error exchanging Facebook code:", error);
+      console.error("[FB OAuth] CRITICAL ERROR exchanging Facebook code:", error);
+      console.error("[FB OAuth] Error type:", typeof error);
+      console.error("[FB OAuth] Error message:", error instanceof Error ? error.message : String(error));
+      console.error("[FB OAuth] Stack trace:", error instanceof Error ? error.stack : "No stack");
+      
+      // Check if it's a fetch error
+      if (error instanceof Error && error.message.includes('fetch')) {
+        console.error("[FB OAuth] This appears to be a network/fetch error");
+      }
+      
       if (state) {
         const shopSlug = state.replace('.myshopify.com', '');
-        return redirect(`https://admin.shopify.com/store/${shopSlug}/apps/profit-analytics-7/app/settings?error=facebook_token_failed`);
+        const errorMessage = error instanceof Error ? encodeURIComponent(error.message.substring(0, 100)) : 'unknown';
+        return redirect(`https://admin.shopify.com/store/${shopSlug}/apps/profit-analytics-7/app/settings?error=facebook_token_failed&msg=${errorMessage}`);
       }
       return redirect("/auth/login");
     }
@@ -153,10 +163,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   
   // Check if Facebook credentials exist
   if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
-    console.error("Facebook credentials not set in environment variables!");
-    console.error("FACEBOOK_APP_ID:", process.env.FACEBOOK_APP_ID ? "Set" : "MISSING");
-    console.error("FACEBOOK_APP_SECRET:", process.env.FACEBOOK_APP_SECRET ? "Set" : "MISSING");
-    return redirect("/auth/login?error=fb_credentials_missing");
+    console.error("[FB OAuth] Facebook credentials not set in environment variables!");
+    console.error("[FB OAuth] FACEBOOK_APP_ID:", process.env.FACEBOOK_APP_ID ? "Set" : "MISSING");
+    console.error("[FB OAuth] FACEBOOK_APP_SECRET:", process.env.FACEBOOK_APP_SECRET ? "Set" : "MISSING");
+    const shopSlug = shop.replace('.myshopify.com', '');
+    return redirect(`https://admin.shopify.com/store/${shopSlug}/apps/profit-analytics-7/app/settings?error=fb_credentials_missing`);
   }
   
   const fbAuthUrl = 
