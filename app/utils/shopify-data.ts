@@ -287,10 +287,15 @@ export function getDateRangeForPeriod(period: string, timezone: string = "UTC"):
       endDate.setUTCHours(23, 59, 59, 999);
       break;
     case "lastMonth":
+      // Start date: First day of last month
       startDate.setUTCMonth(startDate.getUTCMonth() - 1);
       startDate.setUTCDate(1);
       startDate.setUTCHours(0, 0, 0, 0);
-      endDate.setUTCMonth(endDate.getUTCMonth(), 0);
+      
+      // End date: Last day of last month
+      // Set to first day of current month, then subtract 1 day
+      endDate.setUTCDate(1); // First of current month
+      endDate.setUTCDate(0); // Go back one day = last day of previous month
       endDate.setUTCHours(23, 59, 59, 999);
       break;
     default:
