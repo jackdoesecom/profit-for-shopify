@@ -896,23 +896,6 @@ export default function Dashboard() {
                   </Text>
                 )}
               </InlineStack>
-              <Button
-                size="slim"
-                onClick={() => {
-                  const formData = new FormData();
-                  formData.append("period", selectedPeriod);
-                  submit(formData, {
-                    method: "post",
-                    action: "/app/sync-facebook"
-                  });
-                  // Refresh page after sync
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 2000);
-                }}
-              >
-                Sync Facebook Ads Now
-              </Button>
             </InlineStack>
           </div>
         )}
