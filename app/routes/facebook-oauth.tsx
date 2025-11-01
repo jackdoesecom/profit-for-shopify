@@ -124,9 +124,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           },
         });
 
-        // Sync historical data (last 90 days) in the background
+        // Sync historical data (last 365 days) in the background to get all available data
         console.log("[FB OAuth] Starting historical data sync for", state);
-        syncFacebookHistoricalData(state, 90).then((result) => {
+        syncFacebookHistoricalData(state, 365).then((result) => {
           if (result.success) {
             console.log(`[FB OAuth] Successfully synced $${result.totalAmount} from last 90 days`);
           } else {

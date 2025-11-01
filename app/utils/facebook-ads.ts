@@ -99,6 +99,7 @@ export async function syncFacebookHistoricalData(
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
+    console.log(`[FB Sync] Current system date: ${new Date().toISOString()}`);
     console.log(`Syncing ${days} days of Facebook ad data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
     // Fetch daily insights for the entire range
@@ -125,6 +126,11 @@ export async function syncFacebookHistoricalData(
     // Store each day's spend in the database
     const insights = data.data || [];
     console.log(`Received ${insights.length} daily insights from Facebook`);
+    
+    if (insights.length > 0) {
+      console.log(`[FB Sync] First insight date: ${insights[0].date_start}`);
+      console.log(`[FB Sync] Last insight date: ${insights[insights.length - 1].date_start}`);
+    }
 
     for (const insight of insights) {
       const spend = parseFloat(insight.spend || '0');

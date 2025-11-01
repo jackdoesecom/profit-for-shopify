@@ -137,9 +137,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       
       console.log(`[Re-sync] Deleted old Facebook marketing costs for ${session.shop}`);
       
-      // Trigger historical sync (will be imported)
+      // Trigger historical sync (will be imported) - sync 365 days to get all data
       const { syncFacebookHistoricalData } = await import("../utils/facebook-ads");
-      const result = await syncFacebookHistoricalData(session.shop, 90);
+      const result = await syncFacebookHistoricalData(session.shop, 365);
       
       if (result.success) {
         console.log(`[Re-sync] Successfully synced $${result.totalAmount} for ${session.shop}`);

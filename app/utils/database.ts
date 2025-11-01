@@ -36,12 +36,22 @@ export async function getMarketingCosts(
   // Also check what's actually in the database for this shop
   const allCosts = await prisma.marketingCost.findMany({
     where: { shop, platform: "facebook" },
-    orderBy: { date: 'asc' },
-    take: 5
+    orderBy: { date: 'asc' }
   });
   console.log(`Total Facebook costs in DB for ${shop}: ${allCosts.length} entries`);
   if (allCosts.length > 0) {
-    console.log(`Sample dates in DB: ${allCosts.map(c => c.date.toISOString()).join(', ')}`);
+    const firstDate = allCosts[0].date.toISOString();
+    const lastDate = allCosts[allCosts.length - 1].date.toISOString();
+    console.log(`Date range in DB: ${firstDate} to ${lastDate}`);
+    console.log(`First 3 dates: ${allCosts.slice(0, 3).map(c => `${c.date.toISOString()}=$${c.amount}`).join(', ')}`);
+    
+    // Check how many would match our query
+    const matchingCosts = allCosts.filter(c => c.date >= normalizedStart && c.date <= normalizedEnd);
+    console.log(`Costs matching query range: ${matchingCosts.length} out of ${allCosts.length}`);
+    if (matchingCosts.length > 0 && costs.length === 0) {
+      console.log(`WARNING: Database has matching costs but query returned 0!`);
+      console.log(`Sample matching cost: date=${matchingCosts[0].date.toISOString()}, amount=$${matchingCosts[0].amount}`);
+    }
   }
   
   return total;
