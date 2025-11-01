@@ -372,177 +372,177 @@ export default function SettingsPage() {
                         </Text>
                       </BlockStack>
                     </InlineStack>
+
                     {errorType && (
                       <Text variant="bodySm" tone="critical" as="p">
                         {errorType === 'fb_credentials_missing' && 
-                          "⚠️ Facebook credentials not configured. Add FACEBOOK_APP_ID and FACEBOOK_APP_SECRET to Railway."}
+                          "⚠️ Facebook credentials not configured."}
                         {errorType === 'facebook_token_failed' && 
-                          `⚠️ Failed to connect: ${errorMessage ? decodeURIComponent(errorMessage) : 'Check Railway logs for details'}`}
+                          `⚠️ Failed to connect`}
                         {errorType === 'facebook_api_error' && 
-                          `⚠️ Facebook API Error: ${errorMessage ? decodeURIComponent(errorMessage) : 'Unknown error'}`}
+                          `⚠️ Facebook API Error`}
                       </Text>
                     )}
-                  </BlockStack>
-                  
-                  {facebookIntegration?.isActive ? (
-                    <InlineStack gap="200">
-                      <Badge tone="success">Connected</Badge>
-                      <Text as="p" variant="bodySm" tone="success">
-                        Ad spend syncs automatically
-                      </Text>
-                      <Button
-                        size="slim"
-                        onClick={() => {
-                          if (confirm("Re-sync all Facebook ad data? This will clear old data and fetch the last 90 days with daily breakdown.")) {
-                            submit(
-                              { action: 'resyncFacebookData' },
-                              { method: 'post' }
-                            );
-                          }
-                        }}
-                      >
-                        Re-sync Data
-                      </Button>
-                      <Button
-                        size="slim"
-                        tone="critical"
-                        onClick={() => {
-                          if (confirm("Disconnect Facebook Ads? This will delete all synced data and require re-authentication to reconnect.")) {
-                            submit(
-                              { action: 'disconnectFacebook' },
-                              { method: 'post' }
-                            );
-                          }
-                        }}
-                      >
-                        Disconnect
-                      </Button>
-                    </InlineStack>
-                  ) : (
-                    <a 
-                      href={`/facebook-oauth?shop=${shopDomain}`}
-                      target="_top"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <Button>
-                        Connect Facebook Ads
-                      </Button>
-                    </a>
-                  )}
-                </InlineStack>
-                
-                {facebookIntegration?.lastSync && (
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    Last synced: {new Date(facebookIntegration.lastSync).toLocaleString()}
-                  </Text>
-                )}
-                
-                {adAccounts.length > 0 && (
-                  <BlockStack gap="200">
-                    <Text as="p" variant="bodyMd">
-                      Ad Account:
-                    </Text>
-                    <select
-                      value={selectedAdAccountId || ''}
-                      onChange={(e) => {
-                        // Update the selected ad account
-                        const updatedCredentials = {
-                          ...facebookCredentials,
-                          selectedAdAccountId: e.target.value
-                        };
-                        
-                        // Submit to update the integration with proper authentication
-                        submit(
-                          {
-                            action: 'updateFacebookAccount',
-                            credentials: JSON.stringify(updatedCredentials)
-                          },
-                          { method: 'post' }
-                        );
-                      }}
-                      style={{
-                        padding: '8px',
-                        borderRadius: '4px',
-                        border: '1px solid #ddd',
-                        width: '100%',
-                        maxWidth: '300px'
-                      }}
-                    >
-                      {adAccounts.map((account: any) => (
-                        <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency})
-                        </option>
-                      ))}
-                    </select>
-                  </BlockStack>
-                )}
-              </BlockStack>
 
-              {/* Google Ads Integration */}
-              <BlockStack gap="300">
-                <InlineStack align="space-between" blockAlign="center">
-                  <BlockStack gap="100">
-                    <Text as="h3" variant="headingSm">
-                      Google Ads
-                    </Text>
-                    <Text as="p" variant="bodySm" tone="subdued">
-                      Automatically sync your Google ad spend
-                    </Text>
+                    {facebookIntegration?.isActive ? (
+                      <BlockStack gap="200">
+                        <Badge tone="success">Connected</Badge>
+                        <InlineStack gap="200">
+                          <Button
+                            size="slim"
+                            onClick={() => {
+                              if (confirm("Re-sync all Facebook ad data?")) {
+                                submit({ action: 'resyncFacebookData' }, { method: 'post' });
+                              }
+                            }}
+                          >
+                            Re-sync Data
+                          </Button>
+                          <Button
+                            size="slim"
+                            tone="critical"
+                            onClick={() => {
+                              if (confirm("Disconnect Facebook Ads?")) {
+                                submit({ action: 'disconnectFacebook' }, { method: 'post' });
+                              }
+                            }}
+                          >
+                            Disconnect
+                          </Button>
+                        </InlineStack>
+                        {facebookIntegration?.lastSync && (
+                          <Text as="p" variant="bodySm" tone="subdued">
+                            Last synced: {new Date(facebookIntegration.lastSync).toLocaleString()}
+                          </Text>
+                        )}
+                      </BlockStack>
+                    ) : (
+                      <a 
+                        href={`/facebook-oauth?shop=${shopDomain}`}
+                        target="_top"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <Button fullWidth>
+                          Connect
+                        </Button>
+                      </a>
+                    )}
+
+                    {adAccounts.length > 0 && facebookIntegration?.isActive && (
+                      <BlockStack gap="200">
+                        <Text as="p" variant="bodySm" fontWeight="medium">
+                          Ad Account
+                        </Text>
+                        <select
+                          value={selectedAdAccountId || ''}
+                          onChange={(e) => {
+                            const updatedCredentials = {
+                              ...facebookCredentials,
+                              selectedAdAccountId: e.target.value
+                            };
+                            submit(
+                              {
+                                action: 'updateFacebookAccount',
+                                credentials: JSON.stringify(updatedCredentials)
+                              },
+                              { method: 'post' }
+                            );
+                          }}
+                          style={{
+                            padding: '8px',
+                            borderRadius: '4px',
+                            border: '1px solid #ddd',
+                            width: '100%',
+                          }}
+                        >
+                          {adAccounts.map((account: any) => (
+                            <option key={account.id} value={account.id}>
+                              {account.name} ({account.currency})
+                            </option>
+                          ))}
+                        </select>
+                      </BlockStack>
+                    )}
                   </BlockStack>
-                  
-                  {googleIntegration?.isActive ? (
-                    <InlineStack gap="200">
-                      <Badge tone="success">Connected</Badge>
-                      <Text as="p" variant="bodySm" tone="success">
-                        Ad spend syncs automatically
-                      </Text>
-                      <Button
-                        size="slim"
-                        onClick={() => {
-                          if (confirm("Re-sync all Google ad data? This will clear old data and fetch the last year with daily breakdown.")) {
-                            submit(
-                              { action: 'resyncGoogleData' },
-                              { method: 'post' }
-                            );
-                          }
-                        }}
-                      >
-                        Re-sync Data
-                      </Button>
-                      <Button
-                        size="slim"
-                        tone="critical"
-                        onClick={() => {
-                          if (confirm("Disconnect Google Ads? This will delete all synced data and require re-authentication to reconnect.")) {
-                            submit(
-                              { action: 'disconnectGoogle' },
-                              { method: 'post' }
-                            );
-                          }
-                        }}
-                      >
-                        Disconnect
-                      </Button>
+                </Card>
+
+                {/* Google Ads Card */}
+                <Card>
+                  <BlockStack gap="400">
+                    <InlineStack gap="300" blockAlign="center">
+                      {/* Google Logo */}
+                      <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '12px',
+                        backgroundColor: '#4285F4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '28px',
+                        fontWeight: 'bold',
+                        flexShrink: 0
+                      }}>
+                        G
+                      </div>
+                      <BlockStack gap="100">
+                        <Text as="h3" variant="headingMd">
+                          Google Ads
+                        </Text>
+                        <Text as="p" variant="bodySm" tone="subdued">
+                          Sync ad spend automatically
+                        </Text>
+                      </BlockStack>
                     </InlineStack>
-                  ) : (
-                    <a 
-                      href={`/google-oauth?shop=${shopDomain}`}
-                      target="_top"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <Button>
-                        Connect Google Ads
-                      </Button>
-                    </a>
-                  )}
-                </InlineStack>
-                
-                {googleIntegration?.lastSync && (
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    Last synced: {new Date(googleIntegration.lastSync).toLocaleString()}
-                  </Text>
-                )}
-              </BlockStack>
+
+                    {googleIntegration?.isActive ? (
+                      <BlockStack gap="200">
+                        <Badge tone="success">Connected</Badge>
+                        <InlineStack gap="200">
+                          <Button
+                            size="slim"
+                            onClick={() => {
+                              if (confirm("Re-sync all Google ad data?")) {
+                                submit({ action: 'resyncGoogleData' }, { method: 'post' });
+                              }
+                            }}
+                          >
+                            Re-sync Data
+                          </Button>
+                          <Button
+                            size="slim"
+                            tone="critical"
+                            onClick={() => {
+                              if (confirm("Disconnect Google Ads?")) {
+                                submit({ action: 'disconnectGoogle' }, { method: 'post' });
+                              }
+                            }}
+                          >
+                            Disconnect
+                          </Button>
+                        </InlineStack>
+                        {googleIntegration?.lastSync && (
+                          <Text as="p" variant="bodySm" tone="subdued">
+                            Last synced: {new Date(googleIntegration.lastSync).toLocaleString()}
+                          </Text>
+                        )}
+                      </BlockStack>
+                    ) : (
+                      <a 
+                        href={`/google-oauth?shop=${shopDomain}`}
+                        target="_top"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <Button fullWidth>
+                          Connect
+                        </Button>
+                      </a>
+                    )}
+                  </BlockStack>
+                </Card>
+
+              </div>
             </BlockStack>
           </Card>
         </Layout.Section>
