@@ -124,6 +124,34 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.error("Error updating Facebook account:", error);
       return json({ success: false }, { status: 500 });
     }
+  } else if (action === "resyncFacebookData") {
+    // Re-sync Facebook data with daily breakdown
+    try {
+      // Delete existing Facebook marketing costs
+      await prisma.marketingCost.deleteMany({
+        where: {
+          shop: session.shop,
+          platform: "facebook",
+        },
+      });
+      
+      console.log(`[Re-sync] Deleted old Facebook marketing costs for ${session.shop}`);
+      
+      // Trigger historical sync (will be imported)
+      const { syncFacebookHistoricalData } = await import("../utils/facebook-ads");
+      const result = await syncFacebookHistoricalData(session.shop, 90);
+      
+      if (result.success) {
+        console.log(`[Re-sync] Successfully synced $${result.totalAmount} for ${session.shop}`);
+        return json({ success: true, message: `Re-synced $${result.totalAmount.toFixed(2)} from last 90 days` });
+      } else {
+        console.error(`[Re-sync] Failed:`, result.error);
+        return json({ success: false, error: result.error }, { status: 500 });
+      }
+    } catch (error) {
+      console.error("Error re-syncing Facebook data:", error);
+      return json({ success: false, error: "Failed to re-sync" }, { status: 500 });
+    }
   }
 
   return json({ success: true });
@@ -241,6 +269,19 @@ export default function SettingsPage() {
                       <Text as="p" variant="bodySm" tone="success">
                         Ad spend syncs automatically
                       </Text>
+                      <Button
+                        size="slim"
+                        onClick={() => {
+                          if (confirm("Re-sync all Facebook ad data? This will clear old data and fetch the last 90 days with daily breakdown.")) {
+                            submit(
+                              { action: 'resyncFacebookData' },
+                              { method: 'post' }
+                            );
+                          }
+                        }}
+                      >
+                        Re-sync Data
+                      </Button>
                     </InlineStack>
                   ) : (
                     <a 
