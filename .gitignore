@@ -24,3 +24,5 @@ Dockerfile.backup
 # Ignore shopify files created during app dev
 .shopify/*
 .shopify.lock
+prisma/migrations.sqlite.backup/
+prisma/schema.sqlite.backup
