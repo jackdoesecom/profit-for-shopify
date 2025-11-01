@@ -108,24 +108,41 @@ export async function syncFacebookHistoricalData(
     
     console.log(`[FB API] Requesting insights from ${formattedStartDate} to ${formattedEndDate}`);
     
-    const response = await fetch(
-      `https://graph.facebook.com/v18.0/${selectedAdAccountId}/insights?` +
+    // Handle pagination - Facebook returns data in pages
+    let allInsights: FacebookInsight[] = [];
+    let nextUrl = `https://graph.facebook.com/v18.0/${selectedAdAccountId}/insights?` +
       `fields=spend,date_start,date_stop&` +
       `time_range={"since":"${formattedStartDate}","until":"${formattedEndDate}"}` +
       `&time_increment=1` + // Daily breakdown
-      `&access_token=${accessToken}`
-    );
+      `&limit=90` + // Request more items per page
+      `&access_token=${accessToken}`;
     
-    const data = await response.json();
-    
-    if (data.error) {
-      console.error("Facebook Insights API error:", data.error);
-      return { success: false, totalAmount: 0, error: data.error.message };
+    let pageCount = 0;
+    while (nextUrl && pageCount < 20) { // Safety limit to prevent infinite loops
+      console.log(`[FB API] Fetching page ${pageCount + 1}...`);
+      const response = await fetch(nextUrl);
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error("Facebook Insights API error:", data.error);
+        if (pageCount === 0) {
+          return { success: false, totalAmount: 0, error: data.error.message };
+        }
+        break; // Use what we have so far
+      }
+      
+      const pageInsights = data.data || [];
+      allInsights = allInsights.concat(pageInsights);
+      console.log(`[FB API] Page ${pageCount + 1}: Got ${pageInsights.length} insights (total: ${allInsights.length})`);
+      
+      // Check for next page
+      nextUrl = data.paging?.next || null;
+      pageCount++;
     }
 
     // Store each day's spend in the database
-    const insights = data.data || [];
-    console.log(`Received ${insights.length} daily insights from Facebook`);
+    const insights = allInsights;
+    console.log(`Received ${insights.length} total daily insights from Facebook across ${pageCount} pages`);
     
     if (insights.length > 0) {
       console.log(`[FB Sync] First insight date: ${insights[0].date_start}`);
