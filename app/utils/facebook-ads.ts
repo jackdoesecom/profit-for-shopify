@@ -146,9 +146,9 @@ export async function syncFacebookHistoricalData(
           },
         });
 
-        // Normalize date to noon to avoid timezone edge cases
+        // Normalize date to start of day (midnight) to match query ranges
         const costDate = new Date(insight.date_start);
-        costDate.setHours(12, 0, 0, 0);
+        costDate.setHours(0, 0, 0, 0);
         
         if (existing) {
           // Update existing entry

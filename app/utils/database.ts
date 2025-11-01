@@ -7,18 +7,26 @@ export async function getMarketingCosts(
   startDate: Date,
   endDate: Date
 ): Promise<number> {
+  // Normalize dates to start/end of day for proper range matching
+  const normalizedStart = new Date(startDate);
+  normalizedStart.setHours(0, 0, 0, 0);
+  
+  const normalizedEnd = new Date(endDate);
+  normalizedEnd.setHours(23, 59, 59, 999);
+  
   const costs = await prisma.marketingCost.findMany({
     where: {
       shop,
       date: {
-        gte: startDate,
-        lte: endDate,
+        gte: normalizedStart,
+        lte: normalizedEnd,
       },
     },
   });
 
   const total = costs.reduce((sum, cost) => sum + cost.amount, 0);
   console.log(`Marketing costs: ${costs.length} entries, total: $${total}`);
+  console.log(`Query range: ${normalizedStart.toISOString()} to ${normalizedEnd.toISOString()}`);
   return total;
 }
 
