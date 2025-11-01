@@ -105,6 +105,8 @@ export async function syncFacebookHistoricalData(
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const formattedEndDate = endDate.toISOString().split('T')[0];
     
+    console.log(`[FB API] Requesting insights from ${formattedStartDate} to ${formattedEndDate}`);
+    
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${selectedAdAccountId}/insights?` +
       `fields=spend,date_start,date_stop&` +
