@@ -152,6 +152,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.error("Error re-syncing Facebook data:", error);
       return json({ success: false, error: "Failed to re-sync" }, { status: 500 });
     }
+  } else if (action === "disconnectFacebook") {
+    // Disconnect Facebook integration
+    try {
+      // Delete the integration
+      await prisma.integration.delete({
+        where: {
+          shop_platform: {
+            shop: session.shop,
+            platform: "facebook_ads",
+          },
+        },
+      });
+      
+      // Delete all Facebook marketing costs
+      await prisma.marketingCost.deleteMany({
+        where: {
+          shop: session.shop,
+          platform: "facebook",
+        },
+      });
+      
+      console.log(`[Disconnect] Facebook disconnected for ${session.shop}`);
+      return json({ success: true, message: "Facebook Ads disconnected" });
+    } catch (error) {
+      console.error("Error disconnecting Facebook:", error);
+      return json({ success: false, error: "Failed to disconnect" }, { status: 500 });
+    }
   }
 
   return json({ success: true });
@@ -281,6 +308,20 @@ export default function SettingsPage() {
                         }}
                       >
                         Re-sync Data
+                      </Button>
+                      <Button
+                        size="slim"
+                        tone="critical"
+                        onClick={() => {
+                          if (confirm("Disconnect Facebook Ads? This will delete all synced data and require re-authentication to reconnect.")) {
+                            submit(
+                              { action: 'disconnectFacebook' },
+                              { method: 'post' }
+                            );
+                          }
+                        }}
+                      >
+                        Disconnect
                       </Button>
                     </InlineStack>
                   ) : (
