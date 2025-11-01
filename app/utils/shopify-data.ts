@@ -224,6 +224,12 @@ export function getDateRangeForPeriod(period: string): {
     case "last30days":
       startDate.setDate(startDate.getDate() - 30);
       break;
+    case "last60days":
+      startDate.setDate(startDate.getDate() - 60);
+      break;
+    case "last90days":
+      startDate.setDate(startDate.getDate() - 90);
+      break;
     case "thisMonth":
       startDate.setDate(1);
       startDate.setHours(0, 0, 0, 0);

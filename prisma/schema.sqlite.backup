@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+model MarketingCost {
+  id          String   @id @default(uuid())
+  shop        String
+  platform    String   // "facebook", "google", "tiktok", "influencer", "manual"
+  amount      Float
+  date        DateTime
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FixedCost {
+  id          String   @id @default(uuid())
+  shop        String
+  category    String   // "rent", "salary", "software", "other"
+  name        String
+  amount      Float
+  startDate   DateTime
+  endDate     DateTime?
+  recurring   Boolean  @default(true) // monthly recurring or one-time
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ManualCost {
+  id          String   @id @default(uuid())
+  shop        String
+  category    String   // "shipping", "cogs", "other"
+  description String
+  amount      Float
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Integration {
+  id          String   @id @default(uuid())
+  shop        String
+  platform    String   // "quickbooks", "facebook_ads", "google_ads", "tiktok_ads"
+  isActive    Boolean  @default(false)
+  credentials String?  // encrypted credentials
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shop, platform], name: "shop_platform")
+}
+
+model Settings {
+  id                    String   @id @default(uuid())
+  shop                  String   @unique
+  transactionFeePercent Float    @default(3.0)
+  currency              String   @default("USD")
+  monthlyTarget         Float?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model MetricTargets {
+  id                    String   @id @default(uuid())
+  shop                  String   @unique
+  grossProfit           Float?
+  contributionProfit    Float?
+  netProfit             Float?
+  totalSales            Float?
+  newCustomerRevenue    Float?
+  returnCustomerRevenue Float?
+  variableCosts         Float?
+  marketingCosts        Float?
+  fixedCosts            Float?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

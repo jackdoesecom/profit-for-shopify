@@ -677,8 +677,16 @@ export default function Dashboard() {
       case "yesterday": return 1;
       case "last7days": return 7;
       case "last30days": return 30;
+      case "last60days": return 60;
+      case "last90days": return 90;
       case "thisMonth": return new Date().getDate();
-      case "lastMonth": return 30;
+      case "lastMonth": {
+        // Get actual number of days in previous month
+        const now = new Date();
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const daysInLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        return daysInLastMonth;
+      }
       default: return 30;
     }
   };
@@ -829,6 +837,8 @@ export default function Dashboard() {
                  selectedPeriod === "yesterday" ? "Yesterday" :
                  selectedPeriod === "last7days" ? "Last 7 days" :
                  selectedPeriod === "last30days" ? "Last 30 days" :
+                 selectedPeriod === "last60days" ? "Last 60 days" :
+                 selectedPeriod === "last90days" ? "Last 90 days" :
                  selectedPeriod === "thisMonth" ? "This month" :
                  selectedPeriod === "lastMonth" ? "Last month" : "Last 30 days"}
               </Button>
@@ -862,6 +872,20 @@ export default function Dashboard() {
                   content: "Last 30 days",
                   onAction: () => {
                     handlePeriodChange("last30days");
+                    setShowDatePicker(false);
+                  },
+                },
+                {
+                  content: "Last 60 days",
+                  onAction: () => {
+                    handlePeriodChange("last60days");
+                    setShowDatePicker(false);
+                  },
+                },
+                {
+                  content: "Last 90 days",
+                  onAction: () => {
+                    handlePeriodChange("last90days");
                     setShowDatePicker(false);
                   },
                 },
