@@ -478,9 +478,11 @@ function MetricCard({
             {/* Target */}
             {target && target > 0 && (
               <div style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                backgroundColor: '#F3F3F3',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: '0 1px 0 0 rgba(0, 0, 0, 0.05)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -497,9 +499,11 @@ function MetricCard({
             {/* Distribution */}
             {distribution !== undefined && distribution !== 0 && Math.abs(distribution) <= 1000 && (
               <div style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                backgroundColor: '#F3F3F3',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: '0 1px 0 0 rgba(0, 0, 0, 0.05)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -516,9 +520,11 @@ function MetricCard({
             {/* Margin */}
             {margin !== undefined && margin !== 0 && Math.abs(margin) <= 1000 && (
               <div style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                backgroundColor: '#F3F3F3',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: '0 1px 0 0 rgba(0, 0, 0, 0.05)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
