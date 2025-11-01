@@ -33,17 +33,30 @@ export async function getMarketingCosts(
     console.log(`Last entry: date=${costs[costs.length - 1].date.toISOString()}, amount=$${costs[costs.length - 1].amount}`);
   }
   
-  // Also check what's actually in the database for this shop
+  // Also check what's actually in the database for this shop (all platforms)
   const allCosts = await prisma.marketingCost.findMany({
-    where: { shop, platform: "facebook" },
+    where: { shop },
     orderBy: { date: 'asc' }
   });
-  console.log(`Total Facebook costs in DB for ${shop}: ${allCosts.length} entries`);
+  console.log(`Total marketing costs in DB for ${shop}: ${allCosts.length} entries`);
+  
+  // Group by platform
+  const costsByPlatform = allCosts.reduce((acc, cost) => {
+    if (!acc[cost.platform]) acc[cost.platform] = [];
+    acc[cost.platform].push(cost);
+    return acc;
+  }, {} as Record<string, typeof allCosts>);
+  
+  console.log(`Platforms: ${Object.keys(costsByPlatform).join(', ')}`);
+  for (const [platform, platformCosts] of Object.entries(costsByPlatform)) {
+    console.log(`  ${platform}: ${platformCosts.length} entries`);
+  }
+  
   if (allCosts.length > 0) {
     const firstDate = allCosts[0].date.toISOString();
     const lastDate = allCosts[allCosts.length - 1].date.toISOString();
     console.log(`Date range in DB: ${firstDate} to ${lastDate}`);
-    console.log(`First 3 dates: ${allCosts.slice(0, 3).map(c => `${c.date.toISOString()}=$${c.amount}`).join(', ')}`);
+    console.log(`First 3 dates: ${allCosts.slice(0, 3).map(c => `${c.date.toISOString()}=${c.platform}:$${c.amount}`).join(', ')}`);
     
     // Check how many would match our query
     const matchingCosts = allCosts.filter(c => c.date >= normalizedStart && c.date <= normalizedEnd);

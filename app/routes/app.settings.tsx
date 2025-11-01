@@ -51,7 +51,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     },
   });
 
-  return json({ settings, targets, facebookIntegration });
+  // Get Google Ads integration status
+  const googleIntegration = await prisma.integration.findFirst({
+    where: {
+      shop: session.shop,
+      platform: "google_ads",
+    },
+  });
+
+  return json({ settings, targets, facebookIntegration, googleIntegration });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -179,13 +187,68 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.error("Error disconnecting Facebook:", error);
       return json({ success: false, error: "Failed to disconnect" }, { status: 500 });
     }
+  } else if (action === "resyncGoogleData") {
+    // Re-sync Google Ads data
+    try {
+      // Delete existing Google marketing costs
+      await prisma.marketingCost.deleteMany({
+        where: {
+          shop: session.shop,
+          platform: "google",
+        },
+      });
+      
+      console.log(`[Re-sync] Deleted old Google marketing costs for ${session.shop}`);
+      
+      // Trigger historical sync - sync 365 days to get all data
+      const { syncGoogleHistoricalData } = await import("../utils/google-ads");
+      const result = await syncGoogleHistoricalData(session.shop, 365);
+      
+      if (result.success) {
+        console.log(`[Re-sync] Successfully synced $${result.totalAmount} for ${session.shop}`);
+        return json({ success: true, message: `Re-synced $${result.totalAmount.toFixed(2)} from last 365 days` });
+      } else {
+        console.error(`[Re-sync] Failed:`, result.error);
+        return json({ success: false, error: result.error }, { status: 500 });
+      }
+    } catch (error) {
+      console.error("Error re-syncing Google data:", error);
+      return json({ success: false, error: "Failed to re-sync" }, { status: 500 });
+    }
+  } else if (action === "disconnectGoogle") {
+    // Disconnect Google Ads integration
+    try {
+      // Delete the integration
+      await prisma.integration.delete({
+        where: {
+          shop_platform: {
+            shop: session.shop,
+            platform: "google_ads",
+          },
+        },
+      });
+      
+      // Delete all Google marketing costs
+      await prisma.marketingCost.deleteMany({
+        where: {
+          shop: session.shop,
+          platform: "google",
+        },
+      });
+      
+      console.log(`[Disconnect] Google Ads disconnected for ${session.shop}`);
+      return json({ success: true, message: "Google Ads disconnected" });
+    } catch (error) {
+      console.error("Error disconnecting Google Ads:", error);
+      return json({ success: false, error: "Failed to disconnect" }, { status: 500 });
+    }
   }
 
   return json({ success: true });
 };
 
 export default function SettingsPage() {
-  const { settings, targets, facebookIntegration } = useLoaderData<typeof loader>();
+  const { settings, targets, facebookIntegration, googleIntegration } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const navigation = useNavigation();
   const isLoading = navigation.state === "submitting";
@@ -381,6 +444,72 @@ export default function SettingsPage() {
                       ))}
                     </select>
                   </BlockStack>
+                )}
+              </BlockStack>
+
+              {/* Google Ads Integration */}
+              <BlockStack gap="300">
+                <InlineStack align="space-between" blockAlign="center">
+                  <BlockStack gap="100">
+                    <Text as="h3" variant="headingSm">
+                      Google Ads
+                    </Text>
+                    <Text as="p" variant="bodySm" tone="subdued">
+                      Automatically sync your Google ad spend
+                    </Text>
+                  </BlockStack>
+                  
+                  {googleIntegration?.isActive ? (
+                    <InlineStack gap="200">
+                      <Badge tone="success">Connected</Badge>
+                      <Text as="p" variant="bodySm" tone="success">
+                        Ad spend syncs automatically
+                      </Text>
+                      <Button
+                        size="slim"
+                        onClick={() => {
+                          if (confirm("Re-sync all Google ad data? This will clear old data and fetch the last year with daily breakdown.")) {
+                            submit(
+                              { action: 'resyncGoogleData' },
+                              { method: 'post' }
+                            );
+                          }
+                        }}
+                      >
+                        Re-sync Data
+                      </Button>
+                      <Button
+                        size="slim"
+                        tone="critical"
+                        onClick={() => {
+                          if (confirm("Disconnect Google Ads? This will delete all synced data and require re-authentication to reconnect.")) {
+                            submit(
+                              { action: 'disconnectGoogle' },
+                              { method: 'post' }
+                            );
+                          }
+                        }}
+                      >
+                        Disconnect
+                      </Button>
+                    </InlineStack>
+                  ) : (
+                    <a 
+                      href={`/google-oauth?shop=${shopDomain}`}
+                      target="_top"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <Button>
+                        Connect Google Ads
+                      </Button>
+                    </a>
+                  )}
+                </InlineStack>
+                
+                {googleIntegration?.lastSync && (
+                  <Text as="p" variant="bodySm" tone="subdued">
+                    Last synced: {new Date(googleIntegration.lastSync).toLocaleString()}
+                  </Text>
                 )}
               </BlockStack>
             </BlockStack>

@@ -24,6 +24,7 @@ import { fetchOrdersData, fetchProductCosts, getDateRangeForPeriod, getShopTimez
 import { getMarketingCosts, getFixedCosts, getManualCosts, getSettings, prisma } from "../utils/database";
 import { calculateProfits, calculateTrend } from "../utils/profit-calculator";
 import { syncFacebookHistoricalData } from "../utils/facebook-ads";
+import { syncGoogleHistoricalData } from "../utils/google-ads";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
@@ -61,7 +62,30 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         console.log("Auto-syncing recent Facebook ad spend (last 3 days)...");
         // Sync just the last 3 days to keep data fresh without heavy API calls
         syncFacebookHistoricalData(session.shop, 3).catch(error => {
-          console.error("Background sync failed:", error);
+          console.error("Facebook background sync failed:", error);
+        });
+      }
+    }
+
+    // Check if Google Ads is connected and sync if needed
+    const googleIntegration = await prisma.integration.findFirst({
+      where: {
+        shop: session.shop,
+        platform: "google_ads",
+        isActive: true,
+      },
+    });
+
+    if (googleIntegration) {
+      // Sync recent data (last 3 days) if last sync was more than 1 hour ago
+      const lastSync = googleIntegration.lastSync;
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      
+      if (!lastSync || lastSync < oneHourAgo) {
+        console.log("Auto-syncing recent Google ad spend (last 3 days)...");
+        // Sync just the last 3 days to keep data fresh without heavy API calls
+        syncGoogleHistoricalData(session.shop, 3).catch(error => {
+          console.error("Google background sync failed:", error);
         });
       }
     }

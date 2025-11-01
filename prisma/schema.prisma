@@ -37,6 +37,8 @@ model MarketingCost {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([shop, platform, date], name: "shop_platform_date")
 }
 
 model FixedCost {
