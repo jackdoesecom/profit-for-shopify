@@ -428,6 +428,17 @@ function MetricCard({
   // Debug logging for ALL cards
   console.log(`${title} - Target: ${target}, Value: ${value}, Days: ${currentPeriodDays}, Status:`, targetStatus);
 
+  // Calculate percentage change from target
+  const getTargetChangePercent = () => {
+    if (!target || target === 0) return null;
+    const dailyAverage = value / currentPeriodDays;
+    const projectedMonthly = dailyAverage * 30;
+    const percentChange = ((projectedMonthly - target) / target) * 100;
+    return percentChange;
+  };
+
+  const targetChangePercent = getTargetChangePercent();
+
   return (
     <div style={{ 
       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
@@ -450,134 +461,77 @@ function MetricCard({
             <Text as="h3" variant="headingSm" tone="subdued">
               {title}
             </Text>
+            {targetChangePercent !== null && (
+              <Badge tone={targetChangePercent > 0 ? "success" : "critical"}>
+                {`${targetChangePercent > 0 ? "↑" : "↓"} ${Math.abs(targetChangePercent).toFixed(1)}%`}
+              </Badge>
+            )}
           </InlineStack>
           
           <InlineStack align="space-between" blockAlign="end">
             <Text as="h2" variant="heading2xl">
               {formatCurrency(value)}
             </Text>
-            {trend !== 0 && trend !== undefined && (
-              <Badge tone={trend > 0 ? "success" : "critical"}>
-                {`${trend > 0 ? "↑" : "↓"} ${Math.abs(trend).toFixed(1)}%`}
-              </Badge>
-            )}
           </InlineStack>
 
-          <BlockStack gap="100">
+          <InlineStack gap="200" wrap>
             {/* Target */}
-            {target && target > 0 ? (
-              <InlineStack gap="200" blockAlign="center" wrap={false}>
-                <div style={{
-                  width: '14px',
-                  height: '14px',
-                  borderRadius: '50%',
-                  backgroundColor: targetStatus?.tone === 'success' ? '#AEE9D1' : targetStatus?.tone === 'critical' ? '#FED3D1' : '#FFEA8A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  position: 'relative'
-                }}>
-                  <div style={{ 
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    color: targetStatus?.tone === 'success' ? '#008060' : targetStatus?.tone === 'critical' ? '#D72C0D' : '#B98900',
-                    fontSize: '10px',
-                    lineHeight: '10px',
-                    fontWeight: 'bold'
-                  }}>
-                    {targetStatus?.icon || ''}
-                  </div>
-                </div>
-                <Text as="span" variant="bodyMd">
-                  Target: {formatCurrency(target)}
+            {target && target > 0 && (
+              <div style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                backgroundColor: '#F3F3F3',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <Text as="span" variant="bodyMd" fontWeight="medium">
+                  {targetStatus?.icon} Target: {formatCurrency(target)}
                 </Text>
-                {targetStatus && (
-                  <Badge tone={targetStatus.tone}>
-                    {targetStatus.label}
-                  </Badge>
-                )}
-              </InlineStack>
-            ) : (
-              <Text as="span" variant="bodyMd" tone="subdued">
-                No target set
-              </Text>
+                <Badge tone={targetStatus?.tone || 'info'}>
+                  {targetStatus?.label || 'No Target'}
+                </Badge>
+              </div>
             )}
             
             {/* Distribution */}
             {distribution !== undefined && distribution !== 0 && Math.abs(distribution) <= 1000 && (
-              <InlineStack gap="200" blockAlign="center" wrap={false}>
-                <div style={{
-                  width: '14px',
-                  height: '14px',
-                  borderRadius: '50%',
-                  backgroundColor: distribution > 0 ? '#AEE9D1' : '#FED3D1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  position: 'relative'
-                }}>
-                  <div style={{ 
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    color: distribution > 0 ? '#008060' : '#D72C0D',
-                    fontSize: '10px',
-                    lineHeight: '10px',
-                    fontWeight: 'bold'
-                  }}>
-                    {distribution > 0 ? '✓' : '✗'}
-                  </div>
-                </div>
-                <Text as="span" variant="bodyMd">
-                  Distribution: {formatPercent(distribution)}
+              <div style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                backgroundColor: '#F3F3F3',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <Text as="span" variant="bodyMd" fontWeight="medium">
+                  {distribution > 0 ? '✓' : '✗'} Distribution
                 </Text>
                 <Badge tone={distribution > 0 ? "success" : "critical"}>
-                  {distribution > 0 ? "On Target" : "Off Target"}
+                  {distribution > 0 ? "✓" : "✗"}
                 </Badge>
-              </InlineStack>
+              </div>
             )}
             
             {/* Margin */}
             {margin !== undefined && margin !== 0 && Math.abs(margin) <= 1000 && (
-              <InlineStack gap="200" blockAlign="center" wrap={false}>
-                <div style={{
-                  width: '14px',
-                  height: '14px',
-                  borderRadius: '50%',
-                  backgroundColor: margin > 0 ? '#AEE9D1' : '#FED3D1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  position: 'relative'
-                }}>
-                  <div style={{ 
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    color: margin > 0 ? '#008060' : '#D72C0D',
-                    fontSize: '10px',
-                    lineHeight: '10px',
-                    fontWeight: 'bold'
-                  }}>
-                    {margin > 0 ? '✓' : '✗'}
-                  </div>
-                </div>
-                <Text as="span" variant="bodyMd">
-                  Margin: {formatPercent(margin)}
+              <div style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                backgroundColor: '#F3F3F3',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <Text as="span" variant="bodyMd" fontWeight="medium">
+                  {margin > 0 ? '✓' : '✗'} Margin: {formatPercent(margin)}
                 </Text>
                 <Badge tone={margin > 0 ? "success" : "critical"}>
-                  {margin > 0 ? "On Target" : "Off Target"}
+                  {margin > 0 ? "✓" : "✗"}
                 </Badge>
-              </InlineStack>
+              </div>
             )}
-          </BlockStack>
+          </InlineStack>
 
           <InlineStack align="end" gap="200">
             <Button 
