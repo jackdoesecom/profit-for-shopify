@@ -211,6 +211,7 @@ export function getDateRangeForPeriod(period: string): {
   switch (period) {
     case "today":
       startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     case "yesterday":
       startDate.setDate(startDate.getDate() - 1);
@@ -220,19 +221,28 @@ export function getDateRangeForPeriod(period: string): {
       break;
     case "last7days":
       startDate.setDate(startDate.getDate() - 7);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     case "last30days":
       startDate.setDate(startDate.getDate() - 30);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     case "last60days":
       startDate.setDate(startDate.getDate() - 60);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     case "last90days":
       startDate.setDate(startDate.getDate() - 90);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     case "thisMonth":
       startDate.setDate(1);
       startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     case "lastMonth":
       startDate.setMonth(startDate.getMonth() - 1);
@@ -244,6 +254,8 @@ export function getDateRangeForPeriod(period: string): {
     default:
       // Default to last 30 days
       startDate.setDate(startDate.getDate() - 30);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
   }
 
   return { startDate, endDate };
