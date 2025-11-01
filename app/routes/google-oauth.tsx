@@ -4,22 +4,53 @@ import { prisma } from "../utils/database";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state"); // This is the shop domain
+  const shop = url.searchParams.get("shop");
+  const state = url.searchParams.get("state"); // This is the shop domain from callback
   const error = url.searchParams.get("error");
 
-  console.log("[Google OAuth] Starting OAuth callback");
-  console.log("[Google OAuth] Code exists:", !!code);
-  console.log("[Google OAuth] State (shop):", state);
+  console.log("[Google OAuth] Request received");
+  console.log("[Google OAuth] Has code:", !!code);
+  console.log("[Google OAuth] Has shop:", !!shop);
+  console.log("[Google OAuth] Has state:", !!state);
   console.log("[Google OAuth] Error:", error);
 
+  // If this is the initial request (no code), redirect to Google OAuth
+  if (!code && shop) {
+    console.log("[Google OAuth] Initiating OAuth flow for shop:", shop);
+    
+    const redirectUri = process.env.GOOGLE_ADS_REDIRECT_URI || "https://profit-for-shopify-production.up.railway.app/google-oauth";
+    
+    if (!process.env.GOOGLE_ADS_CLIENT_ID || !process.env.GOOGLE_ADS_CLIENT_SECRET) {
+      console.error("[Google OAuth] Missing credentials");
+      return redirect("/app/settings?error=" + encodeURIComponent("Google Ads credentials not configured"));
+    }
+
+    const authUrl = 
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${process.env.GOOGLE_ADS_CLIENT_ID}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent("https://www.googleapis.com/auth/adwords")}` +
+      `&access_type=offline` +
+      `&prompt=consent` +
+      `&state=${encodeURIComponent(shop)}`;
+
+    console.log("Redirecting to Google OAuth");
+    console.log("Using Client ID:", process.env.GOOGLE_ADS_CLIENT_ID);
+    console.log("Using Redirect URI:", redirectUri);
+
+    return redirect(authUrl);
+  }
+
+  // This is the callback from Google
   if (error) {
     console.error("[Google OAuth] OAuth error:", error);
     return redirect(`/app/settings?error=${encodeURIComponent("Google OAuth failed: " + error)}`);
   }
 
   if (!code || !state) {
-    console.error("[Google OAuth] Missing code or state");
-    return redirect("/app/settings?error=" + encodeURIComponent("Missing authorization code or shop"));
+    console.error("[Google OAuth] Missing code or state in callback");
+    return redirect("/app/settings?error=" + encodeURIComponent("Invalid OAuth callback"));
   }
 
   try {
@@ -113,34 +144,5 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("[Google OAuth] Unexpected error:", error);
     return redirect("/app/settings?error=" + encodeURIComponent("Failed to connect Google Ads"));
   }
-};
-
-// Initiate Google OAuth flow
-export const action = async ({ request }: LoaderFunctionArgs) => {
-  const formData = await request.formData();
-  const shop = formData.get("shop") as string;
-
-  const redirectUri = process.env.GOOGLE_ADS_REDIRECT_URI || "https://profit-for-shopify-production.up.railway.app/google-oauth";
-  
-  if (!process.env.GOOGLE_ADS_CLIENT_ID || !process.env.GOOGLE_ADS_CLIENT_SECRET) {
-    console.error("[Google OAuth] Missing credentials");
-    return json({ error: "Google Ads credentials not configured" }, { status: 500 });
-  }
-
-  const authUrl = 
-    `https://accounts.google.com/o/oauth2/v2/auth?` +
-    `client_id=${process.env.GOOGLE_ADS_CLIENT_ID}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&response_type=code` +
-    `&scope=${encodeURIComponent("https://www.googleapis.com/auth/adwords")}` +
-    `&access_type=offline` +
-    `&prompt=consent` +
-    `&state=${encodeURIComponent(shop)}`;
-
-  console.log("Redirecting to Google OAuth:", authUrl.substring(0, 100) + "...");
-  console.log("Using App ID:", process.env.GOOGLE_ADS_CLIENT_ID);
-  console.log("Using Redirect URI:", redirectUri);
-
-  return redirect(authUrl);
 };
 

@@ -329,18 +329,49 @@ export default function SettingsPage() {
           <Card>
             <BlockStack gap="400">
               <Text as="h2" variant="headingMd">
-                Integrations
+                Ad Platform Integrations
+              </Text>
+              <Text as="p" variant="bodyMd" tone="subdued">
+                Connect your ad platforms to automatically track marketing costs
               </Text>
               
-              <BlockStack gap="300">
-                <InlineStack align="space-between" blockAlign="center">
-                  <BlockStack gap="100">
-                    <Text as="h3" variant="headingSm">
-                      Facebook Ads
-                    </Text>
-                    <Text as="p" variant="bodySm" tone="subdued">
-                      Automatically sync your Facebook ad spend
-                    </Text>
+              {/* Integration Cards Grid */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: '20px',
+                marginTop: '20px'
+              }}>
+                
+                {/* Facebook Ads Card */}
+                <Card>
+                  <BlockStack gap="400">
+                    <InlineStack gap="300" blockAlign="center">
+                      {/* Facebook Logo */}
+                      <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '12px',
+                        backgroundColor: '#1877F2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '28px',
+                        fontWeight: 'bold',
+                        flexShrink: 0
+                      }}>
+                        f
+                      </div>
+                      <BlockStack gap="100">
+                        <Text as="h3" variant="headingMd">
+                          Facebook Ads
+                        </Text>
+                        <Text as="p" variant="bodySm" tone="subdued">
+                          Sync ad spend automatically
+                        </Text>
+                      </BlockStack>
+                    </InlineStack>
                     {errorType && (
                       <Text variant="bodySm" tone="critical" as="p">
                         {errorType === 'fb_credentials_missing' && 
