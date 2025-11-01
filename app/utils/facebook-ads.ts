@@ -150,6 +150,8 @@ export async function syncFacebookHistoricalData(
         const costDate = new Date(insight.date_start);
         costDate.setHours(0, 0, 0, 0);
         
+        console.log(`[FB Sync] Storing: date_start=${insight.date_start}, parsed=${costDate.toISOString()}, amount=$${spend}`);
+        
         if (existing) {
           // Update existing entry
           await prisma.marketingCost.update({

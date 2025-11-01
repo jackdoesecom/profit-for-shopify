@@ -27,6 +27,23 @@ export async function getMarketingCosts(
   const total = costs.reduce((sum, cost) => sum + cost.amount, 0);
   console.log(`Marketing costs: ${costs.length} entries, total: $${total}`);
   console.log(`Query range: ${normalizedStart.toISOString()} to ${normalizedEnd.toISOString()}`);
+  
+  if (costs.length > 0) {
+    console.log(`First entry: date=${costs[0].date.toISOString()}, amount=$${costs[0].amount}`);
+    console.log(`Last entry: date=${costs[costs.length - 1].date.toISOString()}, amount=$${costs[costs.length - 1].amount}`);
+  }
+  
+  // Also check what's actually in the database for this shop
+  const allCosts = await prisma.marketingCost.findMany({
+    where: { shop, platform: "facebook" },
+    orderBy: { date: 'asc' },
+    take: 5
+  });
+  console.log(`Total Facebook costs in DB for ${shop}: ${allCosts.length} entries`);
+  if (allCosts.length > 0) {
+    console.log(`Sample dates in DB: ${allCosts.map(c => c.date.toISOString()).join(', ')}`);
+  }
+  
   return total;
 }
 
