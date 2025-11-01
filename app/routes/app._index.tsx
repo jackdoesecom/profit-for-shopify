@@ -912,22 +912,6 @@ export default function Dashboard() {
           </Popover>
         </div>
 
-        {/* Facebook Sync Status */}
-        {facebookConnected && (
-          <div style={{ marginTop: '16px', marginBottom: '16px' }}>
-            <InlineStack align="space-between" blockAlign="center">
-              <InlineStack gap="200" blockAlign="center">
-                <Badge tone="success">Facebook Ads Connected</Badge>
-                {facebookLastSync && (
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    Ad spend last synced: {new Date(facebookLastSync).toLocaleString()}
-                  </Text>
-                )}
-              </InlineStack>
-            </InlineStack>
-          </div>
-        )}
-
         {/* Setup Cards */}
         <Layout>
           <Layout.Section variant="oneThird">
