@@ -99,14 +99,16 @@ export async function syncFacebookHistoricalData(
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
+    console.log(`[FB Sync] ===== SYNC START =====`);
     console.log(`[FB Sync] Current system date: ${new Date().toISOString()}`);
-    console.log(`Syncing ${days} days of Facebook ad data from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    console.log(`[FB Sync] Requesting ${days} days of data`);
+    console.log(`[FB Sync] Calculated date range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
     // Fetch daily insights for the entire range
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const formattedEndDate = endDate.toISOString().split('T')[0];
     
-    console.log(`[FB API] Requesting insights from ${formattedStartDate} to ${formattedEndDate}`);
+    console.log(`[FB API] Formatted date range for API: ${formattedStartDate} to ${formattedEndDate}`);
     
     // Handle pagination - Facebook returns data in pages
     let allInsights: FacebookInsight[] = [];
@@ -142,13 +144,25 @@ export async function syncFacebookHistoricalData(
 
     // Store each day's spend in the database
     const insights = allInsights;
-    console.log(`Received ${insights.length} total daily insights from Facebook across ${pageCount} pages`);
+    console.log(`[FB API] Received ${insights.length} total daily insights from Facebook across ${pageCount} pages`);
     
     if (insights.length > 0) {
-      console.log(`[FB Sync] First insight date: ${insights[0].date_start}`);
-      console.log(`[FB Sync] Last insight date: ${insights[insights.length - 1].date_start}`);
+      console.log(`[FB API] First insight returned: ${insights[0].date_start}`);
+      console.log(`[FB API] Last insight returned: ${insights[insights.length - 1].date_start}`);
+      
+      // Show date range coverage
+      const firstDate = new Date(insights[0].date_start);
+      const lastDate = new Date(insights[insights.length - 1].date_start);
+      const daysCovered = Math.floor((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+      console.log(`[FB API] Date range coverage: ${daysCovered} days between first and last insight`);
+    } else {
+      console.log(`[FB API] WARNING: No insights returned from Facebook!`);
     }
 
+    let storedCount = 0;
+    let skippedCount = 0;
+    const storedDates: string[] = [];
+    
     for (const insight of insights) {
       const spend = parseFloat(insight.spend || '0');
       const insightDate = new Date(insight.date_start);
@@ -175,8 +189,6 @@ export async function syncFacebookHistoricalData(
         const costDate = new Date(insight.date_start);
         costDate.setHours(0, 0, 0, 0);
         
-        console.log(`[FB Sync] Storing: date_start=${insight.date_start}, parsed=${costDate.toISOString()}, amount=$${spend}`);
-        
         if (existing) {
           // Update existing entry
           await prisma.marketingCost.update({
@@ -200,7 +212,11 @@ export async function syncFacebookHistoricalData(
           });
         }
         
+        storedCount++;
+        storedDates.push(insight.date_start);
         totalAmount += spend;
+      } else {
+        skippedCount++;
       }
     }
 
@@ -210,7 +226,13 @@ export async function syncFacebookHistoricalData(
       data: { lastSync: new Date() },
     });
 
-    console.log(`Successfully synced ${insights.length} days, total: $${totalAmount}`);
+    console.log(`[FB Sync] ===== SYNC COMPLETE =====`);
+    console.log(`[FB Sync] Stored ${storedCount} days with data, skipped ${skippedCount} days with $0`);
+    console.log(`[FB Sync] Total amount: $${totalAmount}`);
+    if (storedDates.length > 0) {
+      console.log(`[FB Sync] Date range stored: ${storedDates[0]} to ${storedDates[storedDates.length - 1]}`);
+    }
+    
     return { success: true, totalAmount };
   } catch (error) {
     console.error("Error syncing Facebook historical data:", error);
