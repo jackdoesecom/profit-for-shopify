@@ -1,5 +1,25 @@
 import type { SalesData } from "./profit-calculator";
 
+export async function getShopTimezone(admin: any): Promise<string> {
+  try {
+    const response = await admin.graphql(
+      `#graphql
+        query {
+          shop {
+            ianaTimezone
+          }
+        }
+      `
+    );
+    
+    const data = await response.json();
+    return data.data?.shop?.ianaTimezone || "UTC";
+  } catch (error) {
+    console.error("Error fetching shop timezone:", error);
+    return "UTC"; // Fallback to UTC
+  }
+}
+
 export async function fetchOrdersData(
   admin: any,
   startDate: Date,
@@ -201,61 +221,83 @@ export async function fetchProductCosts(
   }
 }
 
-export function getDateRangeForPeriod(period: string): {
+export function getDateRangeForPeriod(period: string, timezone: string = "UTC"): {
   startDate: Date;
   endDate: Date;
 } {
-  const endDate = new Date();
-  const startDate = new Date();
+  // Get current date/time in the shop's timezone
+  const now = new Date();
+  
+  // Get date parts in the shop's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(now);
+  const dateParts = {
+    year: parseInt(parts.find(p => p.type === 'year')?.value || '0'),
+    month: parseInt(parts.find(p => p.type === 'month')?.value || '0') - 1, // JS months are 0-indexed
+    day: parseInt(parts.find(p => p.type === 'day')?.value || '0'),
+  };
+  
+  // Create dates in UTC but representing the shop's local date
+  const endDate = new Date(Date.UTC(dateParts.year, dateParts.month, dateParts.day, 23, 59, 59, 999));
+  const startDate = new Date(Date.UTC(dateParts.year, dateParts.month, dateParts.day, 0, 0, 0, 0));
 
   switch (period) {
     case "today":
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      // Already set to today's start and end
       break;
     case "yesterday":
-      startDate.setDate(startDate.getDate() - 1);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setDate(endDate.getDate() - 1);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCDate(startDate.getUTCDate() - 1);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCDate(endDate.getUTCDate() - 1);
+      endDate.setUTCHours(23, 59, 59, 999);
       break;
     case "last7days":
-      startDate.setDate(startDate.getDate() - 7);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCDate(startDate.getUTCDate() - 7);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCHours(23, 59, 59, 999);
       break;
     case "last30days":
-      startDate.setDate(startDate.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCDate(startDate.getUTCDate() - 30);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCHours(23, 59, 59, 999);
       break;
     case "last60days":
-      startDate.setDate(startDate.getDate() - 60);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCDate(startDate.getUTCDate() - 60);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCHours(23, 59, 59, 999);
       break;
     case "last90days":
-      startDate.setDate(startDate.getDate() - 90);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCDate(startDate.getUTCDate() - 90);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCHours(23, 59, 59, 999);
       break;
     case "thisMonth":
-      startDate.setDate(1);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCDate(1);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCHours(23, 59, 59, 999);
       break;
     case "lastMonth":
-      startDate.setMonth(startDate.getMonth() - 1);
-      startDate.setDate(1);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setMonth(endDate.getMonth(), 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCMonth(startDate.getUTCMonth() - 1);
+      startDate.setUTCDate(1);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCMonth(endDate.getUTCMonth(), 0);
+      endDate.setUTCHours(23, 59, 59, 999);
       break;
     default:
       // Default to last 30 days
-      startDate.setDate(startDate.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
+      startDate.setUTCDate(startDate.getUTCDate() - 30);
+      startDate.setUTCHours(0, 0, 0, 0);
+      endDate.setUTCHours(23, 59, 59, 999);
   }
 
   return { startDate, endDate };

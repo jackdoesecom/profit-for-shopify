@@ -20,7 +20,7 @@ import {
 } from "@shopify/polaris";
 import { CalendarIcon } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
-import { fetchOrdersData, fetchProductCosts, getDateRangeForPeriod } from "../utils/shopify-data";
+import { fetchOrdersData, fetchProductCosts, getDateRangeForPeriod, getShopTimezone } from "../utils/shopify-data";
 import { getMarketingCosts, getFixedCosts, getManualCosts, getSettings, prisma } from "../utils/database";
 import { calculateProfits, calculateTrend } from "../utils/profit-calculator";
 import { syncFacebookHistoricalData } from "../utils/facebook-ads";
@@ -31,8 +31,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const period = url.searchParams.get("period") || "last30days";
 
-  // Get date ranges for current and previous periods
-  const { startDate, endDate } = getDateRangeForPeriod(period);
+  // Get shop's timezone for accurate date calculations
+  const shopTimezone = await getShopTimezone(admin);
+  console.log(`[Timezone] Shop timezone: ${shopTimezone}`);
+
+  // Get date ranges for current and previous periods using shop's timezone
+  const { startDate, endDate } = getDateRangeForPeriod(period, shopTimezone);
   const periodDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   const previousStartDate = new Date(startDate);
   previousStartDate.setDate(previousStartDate.getDate() - periodDays);
