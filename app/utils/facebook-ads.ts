@@ -146,12 +146,17 @@ export async function syncFacebookHistoricalData(
           },
         });
 
+        // Normalize date to noon to avoid timezone edge cases
+        const costDate = new Date(insight.date_start);
+        costDate.setHours(12, 0, 0, 0);
+        
         if (existing) {
           // Update existing entry
           await prisma.marketingCost.update({
             where: { id: existing.id },
             data: {
               amount: spend,
+              date: costDate,
               description: `Facebook Ads spend for ${insight.date_start}`,
             },
           });
@@ -162,7 +167,7 @@ export async function syncFacebookHistoricalData(
               shop,
               platform: "facebook",
               amount: spend,
-              date: new Date(insight.date_start),
+              date: costDate,
               description: `Facebook Ads spend for ${insight.date_start}`,
             },
           });
